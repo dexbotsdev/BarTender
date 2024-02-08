@@ -82,7 +82,7 @@ async function start() {
             baseToken,
             quoteToken,
             targetMarketId,
-            wallet: mainnetKeyA,
+            wallet: wallet.payer,
             walletTokenAccounts,
         }) 
 
