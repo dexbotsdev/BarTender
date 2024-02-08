@@ -105,7 +105,7 @@ async function start() {
 
           const txList: (VersionedTransaction | Transaction)[] = []
           
-          txList.concat(tnxAB).concat(tnxCD);
+          txList.concat(tnxCD).concat(tnxAB);
 
           const opt :SendOptions = {};
           
