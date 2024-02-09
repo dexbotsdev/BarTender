@@ -1,11 +1,11 @@
 import { connection, mainnetKeyA, privateKey } from "./config";
-import { PublicKey, SendOptions, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, makeTxVersion, wallet } from "./src/constants";
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { readFile } from "fs";
 import { Liquidity, MARKET_STATE_LAYOUT_V3, Market, Percent, Token, TokenAmount, buildSimpleTransaction } from "@raydium-io/raydium-sdk";
 import { BN } from "@project-serum/anchor";
-import { ammCreatePool, calcMarketStartPrice, getWalletTokenAccount, sendTx } from "./src/raydiumUtil";
+import { ammCreatePool, calcMarketStartPrice, getWalletTokenAccount } from "./src/raydiumUtil";
 
 
 async function start() {
@@ -74,8 +74,15 @@ async function start() {
 
         console.log( innerTransactions)
 
-        
-      const innerTransactionInst = await  ammCreatePool({
+        const tnxCD =  await buildSimpleTransaction({
+            connection,
+            makeTxVersion,
+            payer: mainnetKeyA.publicKey,
+            innerTransactions: innerTransactions,
+            addLookupTableInfo: addLookupTableInfo,
+          })
+          
+        ammCreatePool({
             startTime,
             addBaseAmount,
             addQuoteAmount,
@@ -84,32 +91,12 @@ async function start() {
             targetMarketId,
             wallet: wallet.payer,
             walletTokenAccounts,
-        }) 
-
-        const transactions = new Transaction();
-
-        const tnxAB   =  await buildSimpleTransaction({
-            connection,
-            makeTxVersion,
-            payer: wallet.publicKey,
-            innerTransactions: innerTransactionInst.innerTransactions,
-            addLookupTableInfo: addLookupTableInfo,
-          })
-          const tnxCD =  await buildSimpleTransaction({
-            connection,
-            makeTxVersion,
-            payer: mainnetKeyA.publicKey,
-            innerTransactions: innerTransactions,
-            addLookupTableInfo: addLookupTableInfo,
-          })
-
-          const txList: (VersionedTransaction | Transaction)[] = []
+        },tnxCD).then(({ txids }) => {
           
-          txList.concat(tnxCD).concat(tnxAB);
+            console.log('txids', txids)
+        })
 
-          const opt :SendOptions = {};
-          
-          return await sendTx(connection, wallet.payer, txList, opt)
+        
 
     })
 
