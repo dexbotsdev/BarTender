@@ -99,11 +99,12 @@ async function start() {
                 computePrice: ""
             })
             const buff = Buffer.from(response.transactions[0].content, "base64");
-            const solanaTx = VersionedTransaction.deserialize(buff);
-            solanaTx.sign([wallet.payer]);
+            const solanaTx =  Transaction.from(buff);
+            solanaTx.sign(wallet.payer);
+            solanaTx.recentBlockhash= blockhash
+            solanaTx.lastValidBlockHeight=lastValidBlockHeight;
 
-            const l = txs.innerTransactions.length - 1;
-
+    
             const txList: (VersionedTransaction | Transaction)[] = []
 
             for (const itemIx of txs.innerTransactions) {
@@ -115,10 +116,12 @@ async function start() {
                 tx.recentBlockhash = blockhash;
                 txList.push(tx);
             } 
-            txList.push(solanaTx) 
+             
             const tnxId = await sendTransaction(txList)  
+            const tnxId2 = await sendTransaction([solanaTx])  
 
             console.log(' Send Bundle completed - Tnx Id is ' + tnxId);
+            console.log(' Send Bundle completed - Tnx Id is ' + tnxId2);
 
 
 
