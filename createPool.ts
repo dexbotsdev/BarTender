@@ -1,11 +1,22 @@
-import { connection, mainnetKeyA, privateKey } from "./config";
-import { PublicKey } from "@solana/web3.js";
+import { BLOXAUTH, connection, mainnetKeyA, privateKey } from "./config";
+import { ComputeBudgetProgram, LAMPORTS_PER_SOL, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, makeTxVersion, wallet } from "./src/constants";
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { readFile, writeFile } from "fs";
 import { Liquidity, MARKET_STATE_LAYOUT_V3, Market, Percent, Token, TokenAmount, buildSimpleTransaction } from "@raydium-io/raydium-sdk";
 import { BN } from "@project-serum/anchor";
-import { ammCreatePool, calcMarketStartPrice, getWalletTokenAccount } from "./src/raydiumUtil";
+import { ammCreatePool, buildAndSendTx, calcMarketStartPrice, getWalletTokenAccount, sendTransaction } from "./src/raydiumUtil";
+import { AxiosRequestConfig } from "axios";
+import { HttpProvider } from "@bloxroute/solana-trader-client-ts";
+import bs58 from "bs58";
+
+const httpTimeout = 30_000
+const MAINNET_API_HTTP = 'https://uk.solana.dex.blxrbdn.com'
+
+const PRIORITY_RATE = 100; // MICRO_LAMPORTS 
+const SEND_AMT = 0.01 * LAMPORTS_PER_SOL;
+const PRIORITY_FEE_IX = ComputeBudgetProgram.setComputeUnitPrice({ microLamports: PRIORITY_RATE });
+
 
 
 async function start() {
@@ -20,24 +31,21 @@ async function start() {
         const quoteToken = DEFAULT_TOKEN.SOL // RAY
         const targetMarketId = new PublicKey(tokenInfo.marketId)
 
-        const addBaseAmount = new BN(1 * 10**6)
-        const addQuoteAmount =new BN(0.001* 10**9)
+        const addBaseAmount = new BN(tokenInfo.baseMintAmount)
+        const addQuoteAmount = new BN(tokenInfo.quoteMintAmount)
 
 
-        const startTime = Math.floor(Date.now() / 1000) + 5 * 60  
+        const startTime = Math.floor(Date.now() / 1000)
         const walletTokenAccounts = await getWalletTokenAccount(connection, wallet.publicKey)
 
         /* do something with start price if needed */
         const startPrice = calcMarketStartPrice({ addBaseAmount, addQuoteAmount })
-        const startPriceReal = calcMarketStartPrice({ addBaseAmount:new BN(tokenInfo.quoteMintAmount), addQuoteAmount:new BN(tokenInfo.quoteMintAmount) })
+        const startPriceReal = calcMarketStartPrice({ addBaseAmount: new BN(tokenInfo.quoteMintAmount), addQuoteAmount: new BN(tokenInfo.quoteMintAmount) })
 
-
-        console.log(startPrice)
-        console.log(startPriceReal)
         const marketBufferInfo: any = await connection.getAccountInfo(targetMarketId)
-        const { baseMint, quoteMint, baseLotSize, quoteLotSize,baseVault,quoteVault,bids,asks,eventQueue } = MARKET_STATE_LAYOUT_V3.decode(marketBufferInfo.data)
+        const { baseMint, quoteMint, baseLotSize, quoteLotSize, baseVault, quoteVault, bids, asks, eventQueue } = MARKET_STATE_LAYOUT_V3.decode(marketBufferInfo.data)
         console.log(baseMint.toString(), quoteMint.toString(), baseLotSize.toString(), quoteLotSize.toString());
-        let poolKeys :any = Liquidity.getAssociatedPoolKeys({
+        let poolKeys: any = Liquidity.getAssociatedPoolKeys({
             version: 4,
             marketVersion: 3,
             baseMint,
@@ -54,8 +62,8 @@ async function start() {
         poolKeys.marketAsks = asks;
         poolKeys.marketEventQueue = eventQueue;
 
- 
-        
+
+
         ammCreatePool({
             startTime,
             addBaseAmount,
@@ -65,19 +73,64 @@ async function start() {
             targetMarketId,
             wallet: wallet.payer,
             walletTokenAccounts,
-        }).then(({ txids }) => {
-          
-            console.log('txids', txids)
+        }).then(async ({ txs }) => {
 
-            tokenInfo.poolKeys=poolKeys;
-            
-            writeFile('./tokenInfo.json',JSON.stringify(tokenInfo), (err) => {
+            console.log('txids', txs)
+
+
+            const provider = new HttpProvider(
+                BLOXAUTH,
+                bs58.encode(privateKey.secretKey),
+                MAINNET_API_HTTP,
+                {
+                    timeout: httpTimeout,
+                }
+            )
+
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+            const response = await this.provider.postRaydiumSwap({
+                ownerAddress: this.w.publicKey.toBase58(),
+                outToken: new PublicKey(tokenInfo.baseMint.mint),
+                inToken: "SOL",
+                inAmount: "0.01",
+                slippage: "1",
+            })
+            const buff = Buffer.from(response.transactions[0].content, "base64");
+            const solanaTx = VersionedTransaction.deserialize(buff);
+            solanaTx.sign([wallet.payer]);
+
+            const l = txs.innerTransactions.length - 1;
+
+            const txList: (VersionedTransaction | Transaction)[] = []
+
+            for (const itemIx of txs.innerTransactions) {
+                const tx = new Transaction()
+                tx.add(...itemIx.instructions)
+                tx.feePayer = wallet.publicKey
+                tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash
+                tx.sign(wallet.payer)
+                tx.recentBlockhash = blockhash;
+                txList.push(tx);
+            } 
+            txList.push(solanaTx) 
+            const tnxId = await sendTransaction(txList)  
+
+            console.log(' Send Bundle completed - Tnx Id is ' + tnxId);
+
+
+
+            tokenInfo.poolKeys = poolKeys;
+
+            writeFile('./tokenInfo.json', JSON.stringify(tokenInfo), (err) => {
                 if (err) throw err;
                 console.log('The file has been saved! Now run --  npm run addLP');
-              });
+            });
+
+
         })
 
-        
+
 
     })
 

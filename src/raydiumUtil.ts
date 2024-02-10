@@ -91,7 +91,7 @@ export async function buildAndSendTx(innerSimpleV0Transaction: InnerSimpleV0Tran
     addLookupTableInfo: addLookupTableInfo,
   })
 
-
+  
  
   return await sendTx(connection, wallet.payer, willSendTx, options)
 }
@@ -109,7 +109,7 @@ export async function sleepTime(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: string[] }> {
+export async function ammCreatePool(input: TestTxInputInfo) {
   // -------- step 1: make instructions --------
   const initPoolInstructionResponse = await Liquidity.makeCreatePoolV4InstructionV2Simple({
     connection,
@@ -135,7 +135,7 @@ export async function ammCreatePool(input: TestTxInputInfo): Promise<{ txids: st
     feeDestinationId: new PublicKey('7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'), // only mainnet use this
   })
 
-  return { txids: await buildAndSendTx(initPoolInstructionResponse.innerTransactions) }
+  return { txs: initPoolInstructionResponse }
 }
 
 
