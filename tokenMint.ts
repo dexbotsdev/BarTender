@@ -8,6 +8,7 @@ import { wallet } from "./src/constants";
 import { TokenStandard, createAndMint, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { createMint, mintTo } from '@solana/spl-token';
 import { writeFile } from "fs";
+import { nftStorageUploader } from "@metaplex-foundation/umi-uploader-nft-storage";
 
 let baseMint: PublicKey;
 let baseMintDecimals: number; 
@@ -20,22 +21,25 @@ const marketSigners: Keypair[] = [];
 
 async function main() {
     console.log(`Minting  token for ${tokenInfo.tokenName}`);
-    const imgUri = await uploadImage(tokenInfo.image); 
+
+    umi.use(nftStorageUploader({ token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDAxQzM4ZGVhN0QwQTcxRkIyY0NGOGIzYzliMWVmMDk3Mjc0MUY2ODYiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTcwNjg5Mzk3NjkzMCwibmFtZSI6ImpvbyJ9.HkSC0aftzSM9P6LEfAxmrAUG9ojfaU4aSohh3i4Aebw' }))
+
+    
+    const imgUri = await uploadImage(umi,tokenInfo.image); 
     metadata.uri=imgUri;
     const mint = generateSigner(umi);
     umi.use(signerIdentity(userWalletSigner));
     umi.use(mplTokenMetadata())
     console.log(`Uploading Metadata for ${tokenInfo.tokenName}`);
-    const { uri } = await METAPLEX
-    .nfts()
-    .uploadMetadata({
-        name: metadata.name,
-        symbol:metadata.symbol,
-        description: metadata.description,
+    const uri = await umi.uploader.uploadJson({
+        name: tokenInfo.tokenName,
+        description: tokenInfo.description,
         image: imgUri,
-        telegram:`https://t.me/${metadata.symbol}_portal` ,
-        twitter:`https://x.com/${metadata.symbol}_guild` 
-    });
+        telegram:`https://t.me/${tokenInfo.symbol}_portal`,
+        twitter:  ``,
+        discord:``,
+        website:``  
+    })
     console.log('   Metadata URI:',uri);
  
     console.log('Minting TOken    ');

@@ -1,4 +1,5 @@
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   buildSimpleTransaction,
   findProgramAddress,
   InnerSimpleV0Transaction,
@@ -20,6 +21,7 @@ import {
 
 import {
   addLookupTableInfo,
+  feeId,
   makeTxVersion,
   PROGRAMIDS,
   wallet,
@@ -132,7 +134,7 @@ export async function ammCreatePool(input: TestTxInputInfo) {
     associatedOnly: false,
     checkCreateATAOwner: true,
     makeTxVersion,
-    feeDestinationId: new PublicKey('7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'), // only mainnet use this
+    feeDestinationId: feeId, // only mainnet use this
   })
 
   return { txs: initPoolInstructionResponse }
@@ -143,3 +145,18 @@ export function calcMarketStartPrice(input: CalcStartPrice) {
   return (input.addBaseAmount.toNumber() / 10 ** 6 )/ (input.addQuoteAmount.toNumber() / 10 ** 9)
 }
 
+
+export async function findAssociatedTokenAddress(
+  walletAddress: PublicKey,
+  tokenMintAddress: PublicKey
+) {
+  const { publicKey } = await findProgramAddress(
+    [
+      walletAddress.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      tokenMintAddress.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  )
+  return publicKey
+}

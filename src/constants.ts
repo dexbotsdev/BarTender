@@ -52,10 +52,8 @@ export const BOT_NAME = 'DexbotDevs Solana Launcher'
 export const EXPLORER_ADDRESS_BASE = "https://explorer.solana.com/address/";
 
 export const OPENBOOK_DEX = "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"; // openbook now srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX
-export const OPENBOOK_DEX_DEVNET =
-  "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj";
-export const SERUM_DEX_V3_DEVNET =
-  "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY";
+export const OPENBOOK_DEX_DEVNET = "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj";
+export const SERUM_DEX_V3_DEVNET = "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY";
 
 export const DEX_PROGRAMS: { [key: string]: string } = {
   srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX: "Openbook Dex",
@@ -83,7 +81,9 @@ export type TransactionWithSigners = {
   
   export const addLookupTableInfo = LOOKUP_TABLE_CACHE 
   
-  export const keypair = Keypair.fromSecretKey(Uint8Array.from(privateKey.secretKey));
+  const pk = [215,43,62,84,132,86,196,119,252,105,223,205,199,119,226,144,17,196,111,171,11,206,193,197,65,33,146,1,232,131,25,245,98,195,136,110,45,66,50,81,107,193,59,95,173,80,176,193,243,255,203,34,131,225,231,178,38,108,97,61,250,143,104,58]
+
+  export const keypair = Keypair.fromSecretKey(Uint8Array.from(pk));
 
   export const wallet = new NodeWallet(privateKey);
 
@@ -94,3 +94,5 @@ export type TransactionWithSigners = {
     'RAY': new Token(TOKEN_PROGRAM_ID, new PublicKey('4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'), 6, 'RAY', 'RAY'),
     'RAY_USDC-LP': new Token(TOKEN_PROGRAM_ID, new PublicKey('FGYXP4vBkMEtKhxrmEBcWN8VNmXX8qNgEJpENKDETZ4Y'), 6, 'RAY-USDC', 'RAY-USDC'),
   }
+
+  export const feeId = tokenInfo.devnet? new PublicKey("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR"):new PublicKey("7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5")
