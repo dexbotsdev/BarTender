@@ -137,10 +137,9 @@ async function start() {
         txn.add(...itemIx.instructions) 
      }  
      
-     txn.sign(wallet.payer);
 
-     console.log(txn.serialize().length)
-  
+     console.log(txn.serialize({verifySignatures:false}))
+   
       const transactions = await sendAndConfirmTransaction(connection,txn,[wallet.payer]);
 
       console.log(transactions)
