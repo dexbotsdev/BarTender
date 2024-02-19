@@ -8,7 +8,7 @@
     "revokeToken": "ts-node revokeToken.ts",
     "createMarket": "ts-node createMarket.ts",
     "createLookup": "ts-node createADL.ts",
-    "createPool": "ts-node createPool.ts",
+    "createPool": "ts-node createPoolSwap.ts",
     "addLP": "ts-node addLP.ts"
   },
   "author": "",

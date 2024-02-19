@@ -1,6 +1,6 @@
 import { connection, privateKey, tokenInfo } from "./config";
 import { AddressLookupTableProgram, ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, PublicKeyData, Signer, Transaction, VersionedTransaction, sendAndConfirmRawTransaction, TransactionInstruction, TransactionMessage } from '@solana/web3.js';
-import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, makeTxVersion, wallet } from './src/constants';
+import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, feeId, makeTxVersion, wallet } from './src/constants';
 import { TOKEN_PROGRAM_ID, getMint } from '@solana/spl-token';
 import { readFile, writeFile } from "fs";
 import { BigNumberish, Liquidity, LiquidityAssociatedPoolKeys, Logger, MARKET_STATE_LAYOUT_V3, Percent, Token, TokenAmount, buildSimpleTransaction } from "@raydium-io/raydium-sdk";
@@ -11,6 +11,8 @@ import { formatAmmKeysById } from "./src/formatAmmKeysById";
 import assert from "assert";
 import { Market } from "@project-serum/serum";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
+import { LookupTableProvider } from "./src/LookupTableProvider";
+import { create } from "domain";
 const logger = Logger.from('Liquidity')
 
 const httpTimeout = 30_000
@@ -58,16 +60,54 @@ async function start() {
             programId: PROGRAMIDS.AmmV4,
             marketProgramId: PROGRAMIDS.OPENBOOK_MARKET
         })
-        poolKeys.marketBaseVault =  baseVault;
-        poolKeys.marketQuoteVault =  quoteVault;
-        poolKeys.marketBids =  bids;
+        poolKeys.marketBaseVault = baseVault;
+        poolKeys.marketQuoteVault = quoteVault;
+        poolKeys.marketBids = bids;
         poolKeys.marketAsks = asks;
-        poolKeys.marketEventQueue =  eventQueue;
+        poolKeys.marketEventQueue = eventQueue;
         // console.log("Pool Keys:", poolKeys);
         const outputTokenAmount = new TokenAmount(baseToken, 1, false);
         const inTokenAmount = new TokenAmount(DEFAULT_TOKEN.SOL, 0.01, false);
-    
-        // -------- step 2: create instructions by SDK function --------
+
+        const lookupTableProvider = new LookupTableProvider();
+
+        const initPoolInstructionResponse = await Liquidity.makeCreatePoolV4InstructionV2Simple({
+            connection,
+            programId: PROGRAMIDS.AmmV4,
+            marketInfo: {
+                marketId: targetMarketId,
+                programId: PROGRAMIDS.OPENBOOK_MARKET,
+            },
+            baseMintInfo: baseToken,
+            quoteMintInfo: quoteToken,
+            baseAmount: addBaseAmount,
+            quoteAmount: addQuoteAmount,
+            startTime: new BN(Math.floor(startTime)),
+            ownerInfo: {
+                feePayer: wallet.publicKey,
+                wallet: wallet.publicKey,
+                tokenAccounts: walletTokenAccounts,
+                useSOLBalance: true,
+            },
+            associatedOnly: false,
+            checkCreateATAOwner: true,
+            makeTxVersion,
+            feeDestinationId: feeId, // only mainnet use this
+        })
+
+
+        const createPoolInstructions: TransactionInstruction[] = [];
+        for (const itemIx of initPoolInstructionResponse.innerTransactions) {
+            createPoolInstructions.push(...itemIx.instructions)
+        }
+        const addressesMain: PublicKey[] = [];
+        createPoolInstructions.forEach((ixn) => {
+            ixn.keys.forEach((key) => {
+                addressesMain.push(key.pubkey);
+            });
+        });
+        const lookupTablesPool = lookupTableProvider.computeIdealLookupTablesForAddresses(addressesMain);
+
         const { innerTransactions } = await Liquidity.makeSwapInstructionSimple({
             connection,
             poolKeys,
@@ -81,74 +121,49 @@ async function start() {
             makeTxVersion,
             lookupTableCache: addLookupTableInfo
         });
-    
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash({ commitment: 'finalized' });
 
-
-        ammCreatePool({
-            startTime,
-            addBaseAmount,
-            addQuoteAmount,
-            baseToken,
-            quoteToken,
-            targetMarketId,
-            wallet: wallet.payer,
-            walletTokenAccounts,
-        }).then(async ({ txs }) => {
-            console.log('txids')
-            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash({ commitment: 'finalized' });
-
-            console.log('txids 3')
-
-
-            const txn = new Transaction()
-             // Create the priority fee instructions
-            const computePriceIx = ComputeBudgetProgram.setComputeUnitPrice({
-                microLamports: 1,
+        const createSwapInstructions: TransactionInstruction[] = [];
+        for (const itemIx of innerTransactions) {
+            createSwapInstructions.push(...itemIx.instructions)
+        }
+        const addressesSwapMain: PublicKey[] = [];
+        createSwapInstructions.forEach((ixn) => {
+            ixn.keys.forEach((key) => {
+                addressesSwapMain.push(key.pubkey);
             });
-            const computeLimitIx = ComputeBudgetProgram.setComputeUnitLimit({
-                units: 400_000,
-            });
-            txn.add(computePriceIx, computeLimitIx)
+        });
+        const lookupTablesSwapMain = lookupTableProvider.computeIdealLookupTablesForAddresses(addressesSwapMain);
+
+
+        const insts :TransactionInstruction[] =[]
+        const finalLookupTable = lookupTablesSwapMain.concat(lookupTablesPool);
+
+        insts.push(...createPoolInstructions);
+        insts.push(...createSwapInstructions)
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+        console.log(JSON.stringify(finalLookupTable,null,2));
+        
+        const messageMain = new TransactionMessage({
+            payerKey: wallet.publicKey,
+            recentBlockhash: blockhash,
+            instructions: insts,
+        }).compileToV0Message(finalLookupTable);
+
+        const txMainSwap = new VersionedTransaction(messageMain);
+        try {
+            const serializedMsg = txMainSwap.serialize();
+            if (serializedMsg.length > 1232) {
+                console.log('tx too big');
+                process.exit(0);
+            }
+            txMainSwap.sign([wallet.payer]);
+        } catch (e) {
+            console.log(e, 'error signing txMain');
+            process.exit(0);
+        }
+
  
-            let i=0;
-            for (const itemIx of txs.innerTransactions) {  
-              
-                txn.add(...itemIx.instructions) 
-          
-                txn.feePayer = wallet.publicKey
-                txn.recentBlockhash = blockhash 
-                i++;
-            } 
-            txn.sign(wallet.payer);
- 
-            const swapTnx = new Transaction();
-             for (const itemIx of  innerTransactions) { 
-                swapTnx.add(...itemIx.instructions)
-                swapTnx.feePayer = wallet.publicKey
-                swapTnx.recentBlockhash = blockhash 
-            } 
-            swapTnx.sign(wallet.payer);
-            
-
-            
-           
-            const tnxid = await sendAndConfirmTransactions(connection, wallet.payer, [txn,swapTnx]);
-
-            // construct a v0 compatible transaction `Message`
-            console.log(tnxid);
-
-            tokenInfo.poolKeys = poolKeys; 
-
-            writeFile('./tokenInfo.json', JSON.stringify(tokenInfo), (err) => {
-                if (err) throw err;
-                console.log('The file has been saved! Now run --  npm run addLP');
-            });
-
-
-        })
-
-
 
     })
 
@@ -191,7 +206,7 @@ const buyToken = async (mintAddress: string, tokenAmount: number) => {
     poolKeys.marketAsks = marketInfo.asks;
     poolKeys.marketEventQueue = marketInfo.eventQueue;
     // console.log("Pool Keys:", poolKeys);
- 
+
     // -------- step 2: create instructions by SDK function --------
     const { innerTransactions } = await Liquidity.makeSwapInstructionSimple({
         connection,
@@ -206,7 +221,7 @@ const buyToken = async (mintAddress: string, tokenAmount: number) => {
         makeTxVersion,
     });
 
-   
+
 
     // const transactions = await buildSimpleTransaction({
     //     connection: connection,
@@ -220,7 +235,7 @@ const buyToken = async (mintAddress: string, tokenAmount: number) => {
     //await sendAndConfirmTransactions(connection, wallet.payer, transactions);
     //console.log("Success!!!");
 
-   
+
     return innerTransactions
 }
 

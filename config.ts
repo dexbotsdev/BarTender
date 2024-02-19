@@ -1,19 +1,20 @@
 import { Connection, Keypair } from "@solana/web3.js"
 
 export const tokenInfo={ 
-    tokenName:"DEXBOTSDEV",
+    tokenName:"WIFBONK",
     decimals:9,
-    symbol:"DBD",
+    symbol:"WIFBONK",
     supply: "1000000",
     image: "./logo.png",
     fees:"0.025",
-    description:"The $DBD is TOKEN By dexbotsdev", 
+    description:"The $WIFBONK is TOKEN By  Team BONK", 
      imgType: 'image/png',
     imgName: 'SOLANA_SPL_TOKEN', 
     sellerFeeBasisPoints: 500,
     addLP: 90,
-    addSol: 0.1,  
-    devnet:true
+    addSol: 2, 
+    buySwap:1,
+    devnet:false
 }
 
  
@@ -21,8 +22,7 @@ export const tokenInfo={
 
 
 export const devKey=[44,218,89,142,101,242,9,58,61,155,90,184,151,166,12,166,163,56,148,78,201,185,134,129,186,3,226,176,9,98,137,147,178,53,178,105,158,179,79,218,208,181,160,123,111,211,47,88,206,6,237,153,97,151,40,216,147,189,83,160,231,160,65,126]
-export const mainkey=[215,43,62,84,132,86,196,119,252,105,223,205,199,119,226,144,17,196,111,171,11,206,193,197,65,33,146,1,232,131,25,245,98,195,136,110,45,66,50,81,107,193,59,95,173,80,176,193,243,255,203,34,131,225,231,178,38,108,97,61,250,143,104,58]
-
+export const mainkey=[158,226,217,5,57,102,17,210,101,243,151,206,128,144,101,151,58,94,141,49,239,233,34,240,233,12,224,159,172,48,59,247,16,208,120,245,138,16,231,39,39,114,230,68,240,189,98,149,39,97,220,227,239,254,146,112,178,92,156,198,72,119,144,101]
 
 export const devnetKey  = Keypair.fromSecretKey(Uint8Array.from(devKey))
 export const mainnetKey = Keypair.fromSecretKey(Uint8Array.from(mainkey))
