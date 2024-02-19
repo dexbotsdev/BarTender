@@ -224,6 +224,7 @@ async function createWalletSwaps(swapperwallet:NodeWallet,lookupTableProvider: L
       userKeys: {
         tokenAccounts: userwalletTokenAccounts,
         owner: swapperwallet.publicKey,
+        payer:swapperwallet.publicKey
       },
       amountIn: inTokenAmount,
       amountOut: outputTokenAmount,
