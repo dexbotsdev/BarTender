@@ -116,12 +116,17 @@ async function start() {
     const insts: TransactionInstruction[] = []
     var finalLookupTable:AddressLookupTableAccount[]=[];
     insts.push(...createPoolInstructions);
+    const wallets: Keypair[] = []
 
     for(var item of tokenInfo.wallets){
+
+      const userwallet = Keypair.fromSecretKey(Uint8Array.from(item.privateKey));
+      const swapperwallet = new NodeWallet(userwallet);
+      wallets.push(swapperwallet.payer)
       const {
         inst,
         lookUps 
-      }  = await createWalletSwaps(lookupTableProvider, item, poolKeys, baseToken, blockhash)
+      }  = await createWalletSwaps(swapperwallet,lookupTableProvider, item, poolKeys, baseToken, blockhash)
   
       console.log(inst)
       console.log(lookUps)
@@ -152,7 +157,7 @@ async function start() {
         console.log('tx too big');
         process.exit(0);
       }
-      txMain.sign([wallet.payer]);
+      txMain.sign([wallet.payer,...wallets]);
     } catch (e) {
       console.log(e, 'error signing txMain');
       process.exit(0);
@@ -202,14 +207,13 @@ async function getOwnerAta(baseMint: any, publicKey: PublicKey) {
   const foundAta = PublicKey.findProgramAddressSync([publicKey.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), baseMint.toBuffer()], ASSOCIATED_TOKEN_PROGRAM_ID)[0]
   return foundAta;
 }
-async function createWalletSwaps(lookupTableProvider: LookupTableProvider, item: any, poolKeys: any, baseToken: Token, blockhash: string): Promise<any> {
+async function createWalletSwaps(swapperwallet:NodeWallet,lookupTableProvider: LookupTableProvider, item: any, poolKeys: any, baseToken: Token, blockhash: string): Promise<any> {
   const txsSigned: VersionedTransaction[] = [];
 
 
  
     console.debug('Create Step 1 Swap ')
-    const userwallet = Keypair.fromSecretKey(Uint8Array.from(item.privateKey));
-    const swapperwallet = new NodeWallet(userwallet);
+   
 
     const userwalletTokenAccounts = await getWalletTokenAccount(connection, swapperwallet.publicKey);
     const outputTokenAmount = new TokenAmount(baseToken, 1, false);
