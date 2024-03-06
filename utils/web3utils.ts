@@ -14,7 +14,7 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { Umi, createSignerFromKeypair } from "@metaplex-foundation/umi";
 import * as splToken from "@solana/spl-token";
 import nftStorage from '@metaplex-foundation/umi-uploader-nft-storage'
-import { bool, publicKey, struct, u32, u64, u8 } from "@raydium-io/raydium-sdk";
+import { bool, publicKey, struct, u32, u64, u8 } from "raydium-sdk-opt";
 import { initializeAccount } from "@project-serum/serum/lib/token-instructions";
 import { ASSOCIATED_PROGRAM_ID } from '@project-serum/anchor/dist/cjs/utils/token';
 

@@ -8,7 +8,7 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
   TokenAccount,
-} from '@raydium-io/raydium-sdk';
+} from 'raydium-sdk-opt';
 import {
   Connection,
   Keypair,
@@ -28,8 +28,7 @@ import {
 } from './constants';
 import { connection } from '../config';
 import { BN } from '@project-serum/anchor';
-import LP from '../LP';
-
+ 
 const ZERO = new BN(0)
 type LiquidityPairTargetInfo = {
     baseToken: Token
@@ -61,8 +60,7 @@ export async function sendTx(
       iTx.sign([payer]);
       txids.push(await connection.sendTransaction(iTx, options));
     } else {
-      iTx.sign(payer);
-      txids.push(await connection.sendTransaction(iTx, [payer], options));
+       txids.push(await connection.sendTransaction(iTx, [payer], options));
     }
   }
   return txids;

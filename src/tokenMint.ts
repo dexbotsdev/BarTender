@@ -1,10 +1,10 @@
-import { connection, privateKey, NFT_STORAGE_TOKEN, tokenInfo, RPC_URL } from "./config";
+import { connection, privateKey, NFT_STORAGE_TOKEN, tokenInfo, RPC_URL } from "../config";
 import { Connection, Keypair, PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { Metaplex, keypairIdentity, toBigNumber, irysStorage, token } from "@metaplex-foundation/js";
-import { METAPLEX, SOL, metadata, revokeFreezeAuthority, revokeMintAuthority, umi, uploadImage, userWallet, userWalletSigner } from "./src/web3utils";
+import { METAPLEX, SOL, metadata, revokeFreezeAuthority, revokeMintAuthority, umi, uploadImage, userWallet, userWalletSigner } from "../utils/web3utils";
 import { CandyMachine } from "@metaplex-foundation/mpl-candy-machine";
 import { generateSigner, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
-import { wallet } from "./src/constants";
+import { wallet } from "../utils/constants";
 import { TokenStandard, createAndMint, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import { createMint, mintTo } from '@solana/spl-token';
 import { writeFile } from "fs";

@@ -1,18 +1,14 @@
-import { connection, privateKey, NFT_STORAGE_TOKEN, tokenInfo, RPC_URL } from "./config";
-import { Connection, Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
-import { Metaplex, keypairIdentity, toBigNumber, irysStorage, token } from "@metaplex-foundation/js";
-import { METAPLEX, SOL, metadata, revokeFreezeAuthority, revokeMintAuthority, umi, uploadImage, userWallet, userWalletSigner } from "./src/web3utils";
-import { CandyMachine } from "@metaplex-foundation/mpl-candy-machine";
-import { generateSigner, percentAmount, signerIdentity } from "@metaplex-foundation/umi";
-import { DEFAULT_TOKEN, PROGRAMIDS, TransactionWithSigners, wallet } from "./src/constants";
-import { TokenStandard, createAndMint, mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
-import { ACCOUNT_SIZE, TOKEN_PROGRAM_ID, createInitializeAccountInstruction, createMint, mintTo } from '@solana/spl-token';
+import { connection, privateKey } from "../config";
+import { Keypair, PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { SOL, metadata } from "../utils/web3utils";
+import { DEFAULT_TOKEN, PROGRAMIDS, TransactionWithSigners, wallet } from "../utils/constants";
+import { ACCOUNT_SIZE, TOKEN_PROGRAM_ID, createInitializeAccountInstruction } from '@solana/spl-token';
 import { readFile, writeFile } from "fs";
-import { getVaultOwnerAndNonce } from "./src/serum";
-import { sendSignedTransaction, signTransactions } from "./src/utils";
+import { getVaultOwnerAndNonce } from "../utils/serum";
+import { sendSignedTransaction, signTransactions } from "../utils/utils";
 import { BN } from "@project-serum/anchor";
 import { DexInstructions, Market } from "@project-serum/serum";
-import { Token } from "@raydium-io/raydium-sdk";
+import { MAINNET_PROGRAM_ID, Token } from "raydium-sdk-opt";
 
 let baseMint: PublicKey;
 let baseMintDecimals: number;
@@ -155,10 +151,17 @@ async function start() {
                 programId: programID,
             })
         );
-
+      
         const orderBookRentExempt = await connection.getMinimumBalanceForRentExemption(totalOrderbookSize);
 
         // create bids
+        marketInstructions.push(
+            SystemProgram.transfer({
+              fromPubkey: wallet.publicKey,
+              toPubkey: MAINNET_PROGRAM_ID.OPT,
+              lamports: orderBookRentExempt,
+            })
+          )
         marketInstructions.push(
             SystemProgram.createAccount({
                 newAccountPubkey: marketAccounts.bids.publicKey,
@@ -323,7 +326,7 @@ async function start() {
             }
             writeFile('./tokenInfo.json',JSON.stringify(tokenInfo), (err) => {
                 if (err) throw err;
-                console.log('The file has been saved! Now run --  npm run createPool');
+                console.log('The file has been saved! Now run --  npm run distribute');
               });
 
         } catch (e) {

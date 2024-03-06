@@ -1,6 +1,7 @@
 
-import { Connection, Signer, Transaction } from "@solana/web3.js";
-import { tokenInfo } from "../config";
+import { Connection, Keypair, PublicKey, Signer, Transaction } from "@solana/web3.js";
+import { connection, tokenInfo } from "../config";
+import { getOrCreateAssociatedTokenAccount, createTransferCheckedInstruction } from "@solana/spl-token";
 
 
 
@@ -65,3 +66,53 @@ export async function sendTx(connection: Connection, transaction: Transaction, s
   }
 
 }
+
+
+export async function getTokenBalance(tokenMintAddress: PublicKey,wallet: Keypair) {
+  try {
+    const fromTokenAccount = await getOrCreateAssociatedTokenAccount(connection, wallet, tokenMintAddress, wallet.publicKey);
+    const tokenAccountBalance = await connection.getTokenAccountBalance(fromTokenAccount.address);
+    
+    return tokenAccountBalance.value.amount;
+  } catch (error) {
+      console.error('Error fetching token balance:', error);
+  }
+} 
+
+export const transferSPL = async (tokenMintAddress: string, amount: string, destAddress: string, txWallet: Keypair) => {
+
+  console.log('WWallet -- 1 '+destAddress);
+
+
+  const mintPubkey = new PublicKey(tokenMintAddress);
+
+  console.log('WWallet -- 2 '+mintPubkey);
+
+
+  const destPubkey = new PublicKey(destAddress);
+
+  console.log('WWallet -- 3 '+destPubkey);
+
+
+  const fromTokenAccount = await getOrCreateAssociatedTokenAccount(connection, txWallet, mintPubkey, txWallet.publicKey);
+  const tokenAccountBalance = await connection.getTokenAccountBalance(fromTokenAccount.address);
+  if (tokenAccountBalance) {
+      const decimals = tokenAccountBalance.value.decimals;
+      const toTokenAccount = await getOrCreateAssociatedTokenAccount(connection, txWallet, mintPubkey, destPubkey);
+
+      console.log( amount +":"+ Math.floor(Number(amount) * 10 ** decimals)+":"+ decimals)
+      const transaction = new Transaction().add(
+          createTransferCheckedInstruction(
+              fromTokenAccount.address,
+              mintPubkey,
+              toTokenAccount.address,
+              txWallet.publicKey,
+              Math.floor(Number(amount) * 10 ** decimals),
+              decimals
+          )
+      );
+      const txhash = await connection.sendTransaction(transaction, [txWallet]);
+      return txhash;
+  }
+  return false;
+};

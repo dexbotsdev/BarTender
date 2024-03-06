@@ -1,4 +1,4 @@
-import { CacheLTA, ComputeBudgetConfig, InstructionType, Liquidity, LiquiditySwapInstructionSimpleParams, Logger, TOKEN_PROGRAM_ID, Token, TokenAmount, TxVersion, splitTxAndSigners } from '@raydium-io/raydium-sdk';
+import { CacheLTA, ComputeBudgetConfig, InstructionType, Liquidity, LiquiditySwapInstructionSimpleParams, Logger, TOKEN_PROGRAM_ID, Token, TokenAmount, TxVersion, splitTxAndSigners } from 'raydium-sdk-opt';
 import { TransactionInstruction, Signer } from '@solana/web3.js';
 
 const logger = Logger.from('LiquidityV2')

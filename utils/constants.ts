@@ -9,7 +9,7 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
   TxVersion,
-} from '@raydium-io/raydium-sdk';
+} from 'raydium-sdk-opt';
 import {
   Connection,
   Keypair, 

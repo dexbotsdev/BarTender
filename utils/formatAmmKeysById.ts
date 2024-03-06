@@ -5,7 +5,7 @@ import {
   MARKET_STATE_LAYOUT_V3,
   Market,
   SPL_MINT_LAYOUT
-} from '@raydium-io/raydium-sdk';
+} from 'raydium-sdk-opt';
 import {
   PublicKey
 } from '@solana/web3.js';

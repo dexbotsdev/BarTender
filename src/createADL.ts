@@ -1,12 +1,12 @@
-import { AddressLookupTableProgram, PublicKey, SystemProgram, Transaction, TransactionInstruction, sendAndConfirmRawTransaction } from "@solana/web3.js";
+import { AddressLookupTableProgram, PublicKey, Transaction, TransactionInstruction, sendAndConfirmRawTransaction } from "@solana/web3.js";
 import { readFile, writeFile } from "fs";
-import { DEFAULT_TOKEN, OPENBOOK_DEX_DEVNET, PROGRAMIDS, addLookupTableInfo, feeId, makeTxVersion, wallet } from "./src/constants";
-import { connection } from "./config";
-import { Token, MARKET_STATE_LAYOUT_V3, DEVNET_PROGRAM_ID, Liquidity, TokenAmount } from "@raydium-io/raydium-sdk";
+import { DEFAULT_TOKEN, PROGRAMIDS, feeId, makeTxVersion, wallet } from "../utils/constants";
+import { connection } from "../config";
+import { Token, MARKET_STATE_LAYOUT_V3, Liquidity, TokenAmount } from "raydium-sdk-opt";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
-import { getWalletTokenAccount, calcMarketStartPrice, sendTransaction } from "./src/raydiumUtil";
-import { LookupTableProvider } from "./src/LookupTableProvider";
+import { getWalletTokenAccount, calcMarketStartPrice, sendTransaction } from "../utils/raydiumUtil";
+import { LookupTableProvider } from "../utils/LookupTableProvider";
 
 
 

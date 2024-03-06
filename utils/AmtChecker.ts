@@ -1,7 +1,7 @@
 /* tslint:disable */
 // tslint:disable
 
-import { Liquidity, Token, TokenAmount, TOKEN_PROGRAM_ID } from '@raydium-io/raydium-sdk'
+import { Liquidity, Token, TokenAmount, TOKEN_PROGRAM_ID } from 'raydium-sdk-opt'
 
   class AmtChecker {
     static async computeMinimumAmountWithSlippage({

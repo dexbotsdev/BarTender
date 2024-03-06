@@ -1,26 +1,13 @@
-import { connection, privateKey, tokenInfo } from "./config";
-import { AddressLookupTableProgram, ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, PublicKeyData, Signer, Transaction, VersionedTransaction, sendAndConfirmRawTransaction, TransactionInstruction, TransactionMessage } from '@solana/web3.js';
-import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, makeTxVersion, wallet } from './utils/constants';
+import { connection, tokenInfo } from "../config";
+import { ComputeBudgetProgram, Connection, PublicKey, Signer, Transaction, VersionedTransaction } from '@solana/web3.js';
+import { DEFAULT_TOKEN, PROGRAMIDS, addLookupTableInfo, makeTxVersion, wallet } from '../utils/constants';
 import { TOKEN_PROGRAM_ID, getMint } from '@solana/spl-token';
 import { readFile, writeFile } from "fs";
-import { BigNumberish, Liquidity, LiquidityAssociatedPoolKeys, Logger, MARKET_STATE_LAYOUT_V3, Percent, Token, TokenAmount, buildSimpleTransaction } from "@raydium-io/raydium-sdk";
+import { Liquidity, MARKET_STATE_LAYOUT_V3, Percent, Token, TokenAmount, buildSimpleTransaction } from "raydium-sdk-opt";
 import { BN } from "@project-serum/anchor";
-import { ammCreatePool, calcMarketStartPrice, getWalletTokenAccount } from "./utils/raydiumUtil";
-import { sendTx } from "./utils/send_transaction";
-import { formatAmmKeysById } from "./utils/formatAmmKeysById";
-import assert from "assert";
+import { ammCreatePool, calcMarketStartPrice, getWalletTokenAccount } from "../utils/raydiumUtil";
 import { Market } from "@project-serum/serum";
-import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
-const logger = Logger.from('Liquidity')
-
-const httpTimeout = 30_000
-const MAINNET_API_HTTP = 'https://uk.solana.dex.blxrbdn.com'
-
-const PRIORITY_RATE = 100; // MICRO_LAMPORTS 
-const SEND_AMT = 0.01 * LAMPORTS_PER_SOL;
-const PRIORITY_FEE_IX = ComputeBudgetProgram.setComputeUnitPrice({ microLamports: PRIORITY_RATE });
-
-
+ 
 
 async function start() {
 
@@ -142,7 +129,7 @@ async function start() {
 
             writeFile('./tokenInfo.json', JSON.stringify(tokenInfo), (err) => {
                 if (err) throw err;
-                console.log('The file has been saved! Now run --  npm run addLP');
+                console.log('The file has been saved! Now run --  npm run walletswap   for swapping back distributed tokens');
             });
 
 
