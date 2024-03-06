@@ -65,7 +65,7 @@ async function start() {
         poolKeys.marketEventQueue =  eventQueue;
         // console.log("Pool Keys:", poolKeys);
         const outputTokenAmount = new TokenAmount(baseToken, 1, false);
-        const inTokenAmount = new TokenAmount(DEFAULT_TOKEN.SOL, 0.01, false);
+        const inTokenAmount = new TokenAmount(DEFAULT_TOKEN.SOL, 2, false);
     
         // -------- step 2: create instructions by SDK function --------
         const { innerTransactions } = await Liquidity.makeSwapInstructionSimple({
@@ -208,17 +208,17 @@ const buyToken = async (mintAddress: string, tokenAmount: number) => {
 
    
 
-    // const transactions = await buildSimpleTransaction({
-    //     connection: connection,
-    //     makeTxVersion: makeTxVersion,
-    //     payer: wallet.publicKey,
-    //     innerTransactions: innerTransactions,
-    //     addLookupTableInfo: addLookupTableInfo,
-    // });
-    // console.log("transactions:", transactions);
+    const transactions = await buildSimpleTransaction({
+        connection: connection,
+        makeTxVersion: makeTxVersion,
+        payer: wallet.publicKey,
+        innerTransactions: innerTransactions,
+        addLookupTableInfo: addLookupTableInfo,
+    });
+    console.log("transactions:", transactions);
 
-    //await sendAndConfirmTransactions(connection, wallet.payer, transactions);
-    //console.log("Success!!!");
+    await sendAndConfirmTransactions(connection, wallet.payer, transactions);
+    console.log("Success!!!");
 
    
     return innerTransactions
